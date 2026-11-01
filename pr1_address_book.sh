@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 file="addressbook.txt"
@@ -16,6 +17,7 @@ do
     read -p "Enter choice: " ch
 
     case "$ch" in
+
         1)
             touch "$file"
             echo "Address Book Created"
@@ -23,7 +25,13 @@ do
 
         2)
             if [ -f "$file" ]; then
-                cat "$file"
+                if [ -s "$file" ]; then
+                    echo "Name        Phone"
+                    echo "----------------------"
+                    cat "$file"
+                else
+                    echo "Address Book is Empty"
+                fi
             else
                 echo "Address Book does not exist."
             fi
@@ -33,16 +41,22 @@ do
             touch "$file"
             read -p "Enter Name: " name
             read -p "Enter Phone: " phone
+
             echo "$name $phone" >> "$file"
-            echo "Record Inserted"
+            echo "Record Inserted Successfully"
             ;;
 
         4)
             if [ -f "$file" ]; then
                 read -p "Enter Name to Delete: " name
-                grep -F -v "$name " "$file" > temp.txt
-                mv temp.txt "$file"
-                echo "Record Deleted"
+
+                if grep -q "^$name " "$file"; then
+                    awk -v n="$name" '$1 != n' "$file" > temp.txt
+                    mv temp.txt "$file"
+                    echo "Record Deleted Successfully"
+                else
+                    echo "Record Not Found"
+                fi
             else
                 echo "Address Book does not exist."
             fi
@@ -50,22 +64,23 @@ do
 
         5)
             if [ -f "$file" ]; then
-                read -p "Enter name to modify: " oldname
+                read -p "Enter Name to Modify: " oldname
 
                 if grep -q "^$oldname " "$file"; then
-                    read -p "Enter new name: " newname
-                    read -p "Enter new phone: " newphone
+                    read -p "Enter New Name: " newname
+                    read -p "Enter New Phone: " newphone
 
-                    OLD="$oldname" NEW="$newname" PHONE="$newphone" \
-                    awk 'BEGIN { FS=OFS=" " }
-                    $1 == ENVIRON["OLD"] {
-                        $1=ENVIRON["NEW"]
-                        $2=ENVIRON["PHONE"]
+                    awk -v old="$oldname" -v new="$newname" -v phone="$newphone" '
+                    BEGIN { OFS=" " }
+                    $1 == old {
+                        $1 = new
+                        $2 = phone
                     }
-                    { print }' "$file" > temp.txt
+                    { print }
+                    ' "$file" > temp.txt
 
                     mv temp.txt "$file"
-                    echo "Record Modified"
+                    echo "Record Modified Successfully"
                 else
                     echo "Record Not Found"
                 fi
@@ -75,12 +90,13 @@ do
             ;;
 
         6)
-            echo "Exit"
+            echo "Thank You!"
+            echo "Exiting Address Book..."
             exit 0
             ;;
 
         *)
-            echo "Invalid Choice"
+            echo "Invalid Choice! Try Again."
             ;;
     esac
 done
