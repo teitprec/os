@@ -5,12 +5,14 @@ file="addressbook.txt"
 while true
 do
     echo
+    echo "===== ADDRESS BOOK ====="
     echo "1. Create Address Book"
     echo "2. View Address Book"
     echo "3. Insert Record"
     echo "4. Delete Record"
     echo "5. Modify Record"
     echo "6. Exit"
+
     read -p "Enter choice: " ch
 
     case "$ch" in
@@ -18,13 +20,15 @@ do
             touch "$file"
             echo "Address Book Created"
             ;;
+
         2)
             if [ -f "$file" ]; then
                 cat "$file"
             else
-                echo "Address Book does not exist. Create it first."
+                echo "Address Book does not exist."
             fi
             ;;
+
         3)
             touch "$file"
             read -p "Enter Name: " name
@@ -32,33 +36,49 @@ do
             echo "$name $phone" >> "$file"
             echo "Record Inserted"
             ;;
+
         4)
             if [ -f "$file" ]; then
                 read -p "Enter Name to Delete: " name
-                grep -v "^$name " "$file" > temp.txt
+                grep -F -v "$name " "$file" > temp.txt
                 mv temp.txt "$file"
                 echo "Record Deleted"
             else
                 echo "Address Book does not exist."
             fi
             ;;
-       5)
-    read -p "Enter name of record to modify: " oldname
 
-    if grep -q "^$oldname " "$file"; then
-        read -p "Enter new name: " newname
-        read -p "Enter new phone: " newphone
+        5)
+            if [ -f "$file" ]; then
+                read -p "Enter name to modify: " oldname
 
-        sed -i "s/^$oldname .*/$newname $newphone/" "$file"
-        echo "Record modified"
-    else
-        echo "Record not found"
-    fi
-    ;;
+                if grep -q "^$oldname " "$file"; then
+                    read -p "Enter new name: " newname
+                    read -p "Enter new phone: " newphone
+
+                    OLD="$oldname" NEW="$newname" PHONE="$newphone" \
+                    awk 'BEGIN { FS=OFS=" " }
+                    $1 == ENVIRON["OLD"] {
+                        $1=ENVIRON["NEW"]
+                        $2=ENVIRON["PHONE"]
+                    }
+                    { print }' "$file" > temp.txt
+
+                    mv temp.txt "$file"
+                    echo "Record Modified"
+                else
+                    echo "Record Not Found"
+                fi
+            else
+                echo "Address Book does not exist."
+            fi
+            ;;
+
         6)
             echo "Exit"
             exit 0
             ;;
+
         *)
             echo "Invalid Choice"
             ;;
